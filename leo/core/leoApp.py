@@ -75,6 +75,30 @@ class IdleTimeManager(object):
         if self.timer:
             self.timer.start()
     #@-others
+#@+node:ekr.20170204164635.1: ** class ImageManager
+class ImageManager:
+    '''A global class to manage persistent images in the body pane.'''
+    
+    def __init__(self):
+        '''ImageManager.__init__'''
+        self.cursors = []
+        self.images = []
+        self.names = []
+        self.name_index = 0
+        
+    #@+others
+    #@+node:ekr.20170204164826.1: *3* image.deselect
+    def deselect (self, c):
+        '''Save image data when unselecting c's body pane.'''
+        # widget = c.frame.body.widget
+        g.trace()
+    #@+node:ekr.20170204164839.1: *3* image.select
+    def select (self, c):
+        '''Prepare all images in c's body pane.'''
+        # widget = c.frame.body.widget
+        g.trace()
+    #@-others
+        
 #@+node:ekr.20120209051836.10241: ** class LeoApp
 class LeoApp(object):
     """A class representing the Leo application itself.
@@ -227,6 +251,8 @@ class LeoApp(object):
             # The singleton ExternalFilesController instance.
         self.idleTimeManager = None
             # The singleton IdleTimeManager instance.
+        self.imageManager = None
+            # The singleton ImageManager instance.
         self.ipk = None
             # python kernel instance
         self.loadManager = None
@@ -2120,6 +2146,7 @@ class LoadManager(object):
         g.app.idleTimeManager = IdleTimeManager()
         g.app.backgroundProcessManager = leoBackground.BackgroundProcessManager()
         g.app.externalFilesController = leoExternalFiles.ExternalFilesController()
+        g.app.imageManager = ImageManager()
         g.app.recentFilesManager = RecentFilesManager()
         g.app.config = leoConfig.GlobalConfigManager()
         g.app.nodeIndices = leoNodes.NodeIndices(g.app.leoID)

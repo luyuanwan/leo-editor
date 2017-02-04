@@ -1658,6 +1658,7 @@ class LeoTree(object):
             if trace: g.trace(p.h)
             # Actually unselect the old node.
             self.endEditLabel() # sets editPosition = None
+            g.app.imageManager.deselect(c)
         if call_event_handlers:
             g.doHook("unselect2", c=c, new_p=p, old_p=old_p, new_v=p, old_v=old_p)
         if traceTime:
@@ -1714,6 +1715,7 @@ class LeoTree(object):
         ### colorizer = c.frame.body.colorizer
         ### colorizer.init(p, s) # init *first*.
         w.setAllText(s)
+        g.app.imageManager.select(c)
         if trace and trace_time:
             t3 = time.time()
             if t3-t2 > 0.1:
