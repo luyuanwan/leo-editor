@@ -274,7 +274,6 @@ class DynamicWindow(QtWidgets.QMainWindow):
             """In case user has hidden minibuffer with gui-minibuffer-hide"""
 
             def focusInEvent(self, event):
-                ### g.trace(g.callers()) ###
                 self.parent().show()
                 QtWidgets.QLineEdit.focusInEvent(self, event)
                     # EKR: 2014/06/28: Call the base class method.
@@ -1704,7 +1703,7 @@ class LeoQtBody(leoFrame.LeoBody):
         if name == '1':
             w.leo_p = None # Will be set when the second editor is created.
         else:
-            w.leo_p = p.copy()
+            w.leo_p = p and p.copy()
         w.leo_active = True
         w.leo_bodyBar = None
         w.leo_bodyXBar = None
@@ -2182,6 +2181,8 @@ class LeoQtFrame(leoFrame.LeoFrame):
         def update(self):
             if g.app.killed: return
             c = self.c; body = c.frame.body
+            if not c.p:
+                return
             # te is a QTextEdit.
             # 2010/02/19: Fix bug 525090
             # An added editor window doesn't display line/col

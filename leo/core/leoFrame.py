@@ -1712,8 +1712,6 @@ class LeoTree(object):
         c.setCurrentPosition(p)
             # Important: do this *before* setting text,
             # so that the colorizer will have the proper c.p.
-        ### colorizer = c.frame.body.colorizer
-        ### colorizer.init(p, s) # init *first*.
         w.setAllText(s)
         g.app.imageManager.select(c)
         if trace and trace_time:
@@ -1774,7 +1772,8 @@ class LeoTree(object):
             # New in Leo 4.4.1.
         c.frame.clearStatusLine()
         verbose = getattr(c, 'status_line_unl_mode', '') == 'canonical'
-        c.frame.putStatusLine(p.get_UNL(with_proto=verbose, with_index=verbose))
+        if p and p.v:
+            c.frame.putStatusLine(p.get_UNL(with_proto=verbose, with_index=verbose))
         if traceTime:
             delta_t = time.time() - t1
             if delta_t > 0.1:
@@ -2241,7 +2240,7 @@ class NullTree(LeoTree):
     #@+node:ekr.20070228163350.2: *4* edit_widget (NullTree)
     def edit_widget(self, p):
         d = self.editWidgetsDict
-        if not p.v:
+        if not p or not p.v:
             return None
         w = d.get(p.v)
         if not w:

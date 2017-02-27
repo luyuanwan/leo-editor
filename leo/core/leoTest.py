@@ -47,8 +47,10 @@ class EditBodyTestCase(unittest.TestCase):
         self.parent = parent.copy()
         self.before = before.copy()
         self.after = after.copy()
-        self.sel = sel.copy() # Two lines giving the selection range in tk coordinates.
-        self.ins = ins.copy() # One line giving the insert point in tk coordinate.
+        self.sel = sel and sel.copy()
+            # Two lines giving the selection range in tk coordinates.
+        self.ins = ins and ins.copy()
+            # One line giving the insert point in tk coordinate.
         self.tempNode = tempNode.copy()
         # g.trace('parent',parent.h)
         # g.trace('before',before.h)
@@ -432,7 +434,7 @@ class LinterTable():
     def get_files_for_scope(self, scope, fn):
         '''Return a list of absolute filenames for external linters.'''
         d = {
-            'all':      [self.core, self.commands, self.external, self.plugins, self.modes],
+            'all':      [self.core, self.commands, self.external, self.plugins], #  self.modes
             'commands': [self.commands],
             'core':     [self.core, self.commands, self.external, self.gui_plugins],
             'external': [self.external],
@@ -1455,7 +1457,7 @@ class TestManager(object):
         return result
     #@+node:ekr.20051104075904.27: *4* TM.findChildrenOf
     def findChildrenOf(self, root):
-        return [p.copy() for p in root.children()]
+        return list(root.children())
     #@+node:ekr.20120220070422.10423: *4* TM.findNodeAnywhere
     def findNodeAnywhere(self, headline, breakOnError=False):
         # tm = self
@@ -1467,7 +1469,7 @@ class TestManager(object):
         if False and breakOnError: # useful for debugging.
             aList = [repr(z.copy()) for z in c.p.parent().self_and_siblings()]
             print('\n'.join(aList))
-        return c.nullPosition()
+        return None
     #@+node:ekr.20051104075904.29: *4* TM.findNodeInRootTree
     def findRootNode(self, p):
         """Return the root of p's tree."""
@@ -1478,16 +1480,16 @@ class TestManager(object):
     def findNodeInTree(self, p, headline, startswith=False):
         """Search for a node in p's tree matching the given headline."""
         # tm = self
-        c = self.c
+        # c = self.c
         h = headline.strip().lower()
         for p in p.subtree():
             h2 = p.h.strip().lower()
             if h2 == h or startswith and h2.startswith(h):
                 return p.copy()
-        return c.nullPosition()
+        return None
     #@+node:ekr.20051104075904.28: *4* TM.findSubnodesOf
     def findSubnodesOf(self, root):
-        return [p.copy() for p in root.subtree()]
+        return list(root.subtree())
     #@+node:ekr.20051104075904.91: *4* TM.getAllPluginFilenames
     def getAllPluginFilenames(self):
         path = g.os_path_join(g.app.loadDir, "..", "plugins")

@@ -712,7 +712,7 @@ class AtFile(object):
         '''
         at = self
         # Find the unvisited nodes.
-        aList = [z.copy() for z in root.subtree() if not z.isVisited()]
+        aList = [z for z in root.subtree() if not z.isVisited()]
         if aList:
             r = at.createResurrectedNodesNode()
             assert r not in aList
@@ -813,7 +813,7 @@ class AtFile(object):
         p = root.copy()
         scanned_tnodes = set()
         c.init_error_dialogs()
-        after = p.nodeAfterTree() if partialFlag else c.nullPosition()
+        after = p.nodeAfterTree() if partialFlag else None
         while p and p != after:
             gnx = p.gnx
             #skip clones
@@ -3041,7 +3041,7 @@ class AtFile(object):
             # Write dirty nodes in the entire outline.
             root = c.rootPosition()
             p = c.rootPosition()
-            after = c.nullPosition()
+            after = None
         at.clearAllOrphanBits(p)
         while p and p != after:
             if p.isAtIgnoreNode() and not p.isAtAsisFileNode():
@@ -3194,7 +3194,7 @@ class AtFile(object):
         '''Save the outline if only persistence data nodes are dirty.'''
         trace = False and not g.unitTesting
         c = self.c
-        changed_positions = [p.copy() for p in c.all_unique_positions() if p.v.isDirty()]
+        changed_positions = [p for p in c.all_unique_positions() if p.v.isDirty()]
         at_persistence = c.persistenceController and c.persistenceController.has_at_persistence_node()
         if at_persistence:
             changed_positions = [p for p in changed_positions
@@ -4405,7 +4405,8 @@ class AtFile(object):
         if s1 is None:
             g.internalError('empty compare file: %s' % path1)
             return False
-        s2, e2 = g.readFileIntoString(path2, mode='rb', raw=True)
+        s2 = g.readFileIntoEncodedString(path2)
+        e2 = None
         if s2 is None:
             g.internalError('empty compare file: %s' % path2)
             return False
