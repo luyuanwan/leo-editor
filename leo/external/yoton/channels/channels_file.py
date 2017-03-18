@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2013 Almar Klein
-#
-# Yoton is distributed under the terms of the (new) BSD License.
-# The full license can be found in 'license.txt'.
+#@+leo-ver=5-thin
+#@+node:ekr.20170318085430.1: * @file channels_file.py
+#@@first
 
 """ Module yoton.channels.file
 
@@ -10,15 +9,17 @@ Defines a class that can be used to wrap a channel to give it
 a file like interface.
 
 """
-
+#@+<< channels_file imports >>
+#@+node:ekr.20170318085440.1: ** << channels_file imports >>
 import sys
 import os
-from yoton.misc import basestring, bytes, str, long
+# from yoton.misc import basestring, bytes, str, long
 from yoton.channels import PubChannel, SubChannel
 
 PY2 = sys.version_info[0] == 2
-
-
+#@-<< channels_file imports >>
+#@+others
+#@+node:ekr.20170318085440.2: ** class FileWrapper
 class FileWrapper(object):
     """ FileWrapper(channel, chunksize=0, echo=None)
     
@@ -39,6 +40,8 @@ class FileWrapper(object):
     # don't seem to make sense: readlines, seek, tell, truncate, errors,
     # mode, name,
     
+    #@+others
+    #@+node:ekr.20170318085440.3: *3* __init__
     def __init__(self, channel, chunksize=0, echo=None, isatty=False):
         if not isinstance(channel, (PubChannel, SubChannel)):
             raise ValueError('FileWrapper needs a PubChannel or SubChannel.')
@@ -52,7 +55,8 @@ class FileWrapper(object):
         self._pid = os.getpid()  # To detect whether we are in multi-process
         self.errors = 'strict'  # compat
         self._isatty = isatty
-    
+
+    #@+node:ekr.20170318085440.4: *3* close
     def close(self):
         """ Close the file object.
         """
@@ -67,46 +71,53 @@ class FileWrapper(object):
             return
         # Normal behavior
         self._channel.close()
-    
+
+    #@+node:ekr.20170318085440.5: *3* encoding
     @property
     def encoding(self):
         """ The encoding used to encode strings to bytes and vice versa. 
         """
         return 'UTF-8'
-    
-    
+
+
+    #@+node:ekr.20170318085440.6: *3* closed
     @property
     def closed(self):
         """ Get whether the file is closed. 
         """
         return self._channel._closed
-    
-    
+
+
+    #@+node:ekr.20170318085440.7: *3* flush
     def flush(self):
         """ flush()
         
         Wait here until all messages have been send.
         
         """
-        context = self._channel._context.flush()
-    
-    
+        self._channel._context.flush()
+
+
+    #@+node:ekr.20170318085440.8: *3* newlines
     @property
     def newlines(self):
         """ The type of newlines used. Returns None; we never know what the
         other end could be sending! 
         """
         return None
-    
-    
+
+
     # this is for the print statement to keep track spacing stuff
+    #@+node:ekr.20170318085440.9: *3* _set_softspace
     def _set_softspace(self, value):
         self._softspace = bool(value)
+    #@+node:ekr.20170318085440.10: *3* _get_softspace
     def _get_softspace(self):
         return hasattr(self, '_softspace') and self._softspace
     softspace = property(_get_softspace, _set_softspace, None, '')
         
-    
+
+    #@+node:ekr.20170318085440.11: *3* read
     def read(self, block=None):
         """ read(block=None)
         
@@ -120,8 +131,9 @@ class FileWrapper(object):
             return res.encode('utf-8')
         else:
             return res
-    
-    
+
+
+    #@+node:ekr.20170318085440.12: *3* write
     def write(self, message):
         """ write(message)
         
@@ -148,8 +160,9 @@ class FileWrapper(object):
                 self._channel.send( message[i:i+chunkSize] )
         else:
             self._channel.send(message)
-    
-    
+
+
+    #@+node:ekr.20170318085440.13: *3* writelines
     def writelines(self, lines):
         """ writelines(lines)
         
@@ -158,8 +171,9 @@ class FileWrapper(object):
         """
         for line in lines:
             self._channel.send(line)
-    
-    
+
+
+    #@+node:ekr.20170318085440.14: *3* readline
     def readline(self, size=0):
         """ readline(size=0)
         
@@ -192,9 +206,15 @@ class FileWrapper(object):
             return line.encode('utf-8')
         else:
             return line
-    
+
+    #@+node:ekr.20170318085440.15: *3* isatty
     def isatty(self):
         """ Get whether this is a terminal.
         """
         return self._isatty
 
+    #@-others
+#@-others
+#@@language python
+#@@tabwidth -4
+#@-leo

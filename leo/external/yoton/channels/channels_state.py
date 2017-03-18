@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2013 Almar Klein
-#
-# Yoton is distributed under the terms of the (new) BSD License.
-# The full license can be found in 'license.txt'.
-
+#@+leo-ver=5-thin
+#@+node:ekr.20170318090242.1: * @file channels_state.py
+#@@first
 """ Module yoton.channels.channels_state
 
 Defines the channel class for state.
 
 """
-
-from yoton.misc import basestring, bytes, str, long
-from yoton.misc import Property
+#@+<< channels_state imports >>
+#@+node:ekr.20170318090253.1: ** << channels_state imports >>
+# from yoton.misc import bytes # basestring, str, long
+# from yoton.misc import Property
 from yoton.channels import BaseChannel
-
-
+#@-<< channels_state imports >>
+#@+others
+#@+node:ekr.20170318090253.2: ** class StateChannel (BaseChannel)
 class StateChannel(BaseChannel):
     """ StateChannel(context, slot_base, message_type=yoton.TEXT)
     
@@ -51,6 +51,8 @@ class StateChannel(BaseChannel):
     
     """
     
+    #@+others
+    #@+node:ekr.20170318090253.3: *3* __init__
     def __init__(self, *args, **kwargs):
         BaseChannel.__init__(self, *args, **kwargs)
         
@@ -60,13 +62,15 @@ class StateChannel(BaseChannel):
         # and to be able to determine if a state was set (because the 
         # message may be set to None)
         self._current_package = None
-        self._current_message = self.message_from_bytes(bytes())
-    
-    
+        self._current_message = self.message_from_bytes(b'') ### bytes())
+
+
+    #@+node:ekr.20170318090253.4: *3* _messaging_patterns
     def _messaging_patterns(self):
         return 'state', 'state'
-    
-    
+
+
+    #@+node:ekr.20170318090253.5: *3* send
     def send(self, message):
         """ send(message)
         
@@ -86,8 +90,9 @@ class StateChannel(BaseChannel):
         if message != self._current_message:
             self._current_package = self._send( self.message_to_bytes(message) )
             self._current_message = self.message_from_bytes(self._current_package._data)
-    
-    
+
+
+    #@+node:ekr.20170318090253.6: *3* send_last
     def send_last(self):
         """ send_last()
         
@@ -96,8 +101,9 @@ class StateChannel(BaseChannel):
         """
         if self._current_package is not None:
             self._send( self.message_to_bytes(self._current_message) )
-    
-    
+
+
+    #@+node:ekr.20170318090253.7: *3* recv
     def recv(self, block=False):
         """ recv(block=False)
         
@@ -106,8 +112,9 @@ class StateChannel(BaseChannel):
         
         """
         return self._current_message
-    
-    
+
+
+    #@+node:ekr.20170318090253.8: *3* _recv_package
     def _recv_package(self, package):
         """ _recv_package(package)
         
@@ -118,8 +125,9 @@ class StateChannel(BaseChannel):
         self._current_package = package
         #
         self._maybe_emit_received()
-    
-    
+
+
+    #@+node:ekr.20170318090253.9: *3* _inject_package
     def _inject_package(self, package):
         """ Non-blocking version of recv_package. Does the same.
         """
@@ -127,8 +135,9 @@ class StateChannel(BaseChannel):
         self._current_package = package
         #
         self._maybe_emit_received()
-    
-    
+
+
+    #@+node:ekr.20170318090253.10: *3* _recv
     def _recv(self, block=None):
         """ _recv(block=None)
         
@@ -137,3 +146,8 @@ class StateChannel(BaseChannel):
         
         """
         return self._current_package
+    #@-others
+#@-others
+#@@language python
+#@@tabwidth -4
+#@-leo

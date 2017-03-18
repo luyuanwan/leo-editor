@@ -1,26 +1,29 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2013 Almar Klein
-#
-# Yoton is distributed under the terms of the (new) BSD License.
-# The full license can be found in 'license.txt'.
+#@+leo-ver=5-thin
+#@+node:ekr.20170318085113.1: * @file channels_base.py
+#@@first
 
 """ Module yoton.channels.channels_base
 
 Defines the base channel class and the MessageType class.
 
 """
-
+#@+<< channels_base imports >>
+#@+node:ekr.20170318085137.1: ** << channels_base imports >>
 import time
 import threading
 
 import yoton
-from yoton.misc import basestring, bytes, str
-from yoton.misc import Property, getErrorMsg, slot_hash, PackageQueue
+from yoton.misc import basestring # , bytes, str
+from yoton.misc import slot_hash, PackageQueue # getErrorMsg, Property
 from yoton.core import Package
 from yoton.context import Context
-from yoton.channels.message_types import MessageType, BINARY, TEXT, OBJECT
+from yoton.channels.message_types import MessageType, TEXT # BINARY, OBJECT
 
 
+#@-<< channels_base imports >>
+#@+others
+#@+node:ekr.20170318085137.2: ** class BaseChannel
 class BaseChannel(object):
     """ BaseChannel(context, slot_base, message_type=yoton.TEXT)
     
@@ -59,6 +62,8 @@ class BaseChannel(object):
     
     """
     
+    #@+others
+    #@+node:ekr.20170318085137.3: *3* __init__
     def __init__(self, context, slot_base, message_type=None):
         
         # Store context
@@ -100,8 +105,9 @@ class BaseChannel(object):
         
         # Init slots
         self._init_slots(slot_base)
-    
-    
+
+
+    #@+node:ekr.20170318085137.4: *3* _init_slots
     def _init_slots(self, slot_base):
         """ _init_slots(slot_base)
         
@@ -149,8 +155,9 @@ class BaseChannel(object):
             self._context._register_receiving_channel(self, self._slot_in_h, self._slot_in)
         if not self._slot_out_h and not self._slot_in_h:
             raise ValueError('This channel does not have valid slots.')
-    
-    
+
+
+    #@+node:ekr.20170318085137.5: *3* _messaging_patterns
     def _messaging_patterns(self):
         """ _messaging_patterns()
         
@@ -159,8 +166,9 @@ class BaseChannel(object):
         
         """
         raise NotImplementedError()
-    
-    
+
+
+    #@+node:ekr.20170318085137.6: *3* close
     def close(self):
         """ close()
         
@@ -177,8 +185,9 @@ class BaseChannel(object):
         # The context clears the reference to this channel when unregistering.
         self._closed = True
         self._context._unregister_channel(self)
-    
-    
+
+
+    #@+node:ekr.20170318085137.7: *3* _send
     def _send(self, message, dest_id=0, dest_seq=0):
         """ _send(message, dest_id=0, dest_seq=0)
         
@@ -218,15 +227,16 @@ class BaseChannel(object):
             return p
         else:
             return None
-    
-    
+
+
+    #@+node:ekr.20170318085137.8: *3* _recv
     def _recv(self, block):
         """ _recv(block)
         
         Receive a package (or None).
         
         """
-    
+
         if block is True:
             # Block for 0.25 seconds so that KeyboardInterrupt works
             while not self._closed:
@@ -241,8 +251,9 @@ class BaseChannel(object):
                 return self._q_in.pop(block)
             except self._q_in.Empty:
                 return None
-    
-    
+
+
+    #@+node:ekr.20170318085137.9: *3* _set_send_lock
     def _set_send_lock(self, value):
         """ _set_send_lock(self, value)
         
@@ -263,11 +274,12 @@ class BaseChannel(object):
                 self._send_condition.notifyAll()
             finally:
                 self._send_condition.release()
-    
-    
+
+
     ## How packages are inserted in this channel for receiving
-    
-    
+
+
+    #@+node:ekr.20170318085137.10: *3* _inject_package
     def _inject_package(self, package):
         """ _inject_package(package)
         
@@ -277,8 +289,9 @@ class BaseChannel(object):
         """
         self._q_in.push(package)
         self._maybe_emit_received()
-    
-    
+
+
+    #@+node:ekr.20170318085137.11: *3* _recv_package
     def _recv_package(self, package):
         """ _recv_package(package)
         
@@ -287,8 +300,9 @@ class BaseChannel(object):
         """
         self._q_in.push(package)
         self._maybe_emit_received()
-    
-    
+
+
+    #@+node:ekr.20170318085137.12: *3* _maybe_emit_received
     def _maybe_emit_received(self):
         """ _maybe_emit_received()
         
@@ -302,8 +316,9 @@ class BaseChannel(object):
             self._posted_received_event = True
             event = yoton.events.Event(self._emit_received)
             yoton.app.post_event(event)
-    
-    
+
+
+    #@+node:ekr.20170318085137.13: *3* _emit_received
     def _emit_received(self):
         """ _emit_received()
         
@@ -318,11 +333,12 @@ class BaseChannel(object):
         """
         self._posted_received_event = False # Reset
         self.received.emit_now(self)
-    
-    
+
+
     # Received property sits on the BaseChannel because is is used by almost
     # all channels. Note that PubChannels never emit this signal as they
     # catch status messages from the SubChannel by overloading _recv_package().
+    #@+node:ekr.20170318085137.14: *3* received
     @property
     def received(self):
         """ Signal that is emitted when new data is received. Multiple 
@@ -332,34 +348,43 @@ class BaseChannel(object):
         as argument.
         """
         return self._received_signal
-    
-    
+
+
     ## Properties
-    
-    
+
+
+    #@+node:ekr.20170318085137.15: *3* pending
     @property
     def pending(self):
         """ Get the number of pending incoming messages. 
         """
         return len(self._q_in)
-    
-    
+
+
+    #@+node:ekr.20170318085137.16: *3* closed
     @property
     def closed(self):
         """ Get whether the channel is closed. 
         """
         return self._closed
-    
-    
+
+
+    #@+node:ekr.20170318085137.17: *3* slot_outgoing
     @property
     def slot_outgoing(self):
         """ Get the outgoing slot name.
         """
         return self._slot_out
-    
-    
+
+
+    #@+node:ekr.20170318085137.18: *3* slot_incoming
     @property
     def slot_incoming(self):
         """ Get the incoming slot name.
         """
         return self._slot_in
+    #@-others
+#@-others
+#@@language python
+#@@tabwidth -4
+#@-leo

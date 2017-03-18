@@ -1,34 +1,34 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2013 Almar Klein
-#
-# Yoton is distributed under the terms of the (new) BSD License.
-# The full license can be found in 'license.txt'.
+#@+leo-ver=5-thin
+#@+node:ekr.20170318090026.1: * @file channels_reqrep.py
+#@@first
 
 """ Module yoton.channels.channels_reqprep
 
 Defines the channel classes for the req/rep pattern.
 
 """
-
+#@+<< channels_reqrep imports >>
+#@+node:ekr.20170318090045.1: ** << channels_reqrep imports >>
 import time
 import threading
-
 import yoton
-from yoton.misc import basestring, bytes, str
-from yoton.misc import Property, getErrorMsg
+from yoton.misc import basestring, bytes # , str
+from yoton.misc import getErrorMsg # Property, 
 from yoton.channels import BaseChannel, OBJECT
-
 
 # For the req/rep channels to negotiate (simple load balancing)
 REQREP_SEQ_REF = 2**63
 
 # Define object to recognize errors
 ERROR_OBJECT = 'yoton_ERROR_HANDLING_REQUEST'
-
-
-# Define exceoptions
+#@-<< channels_reqrep imports >>
+#@+others
+#@+node:ekr.20170318090145.1: ** Exceptions
+#@+node:ekr.20170318090045.2: *3* class TimeoutError
 class TimeoutError(Exception):
     pass
+#@+node:ekr.20170318090045.3: *3* class CancelledError
 class CancelledError(Exception):
     pass
 # # Try loading the exceptions from the concurrency framework
@@ -40,6 +40,7 @@ class CancelledError(Exception):
 
 
 
+#@+node:ekr.20170318090045.4: ** class Future
 class Future(object):
     """ Future(req_channel, req, request_id)
     
@@ -54,6 +55,8 @@ class Future(object):
     
     """
     
+    #@+others
+    #@+node:ekr.20170318090045.5: *3* __init__
     def __init__(self, req_channel, req, request_id):
         
         # For being a Future object
@@ -72,8 +75,9 @@ class Future(object):
         self._first_send_time = time.time()
         self._next_send_time = self._first_send_time + 0.5
         self._auto_cancel_timeout = 10.0
-    
-    
+
+
+    #@+node:ekr.20170318090045.6: *3* _send
     def _send(self, msg):
         """ _send(msg)
         
@@ -87,8 +91,9 @@ class Future(object):
             # if self._closed, will call _send again, and catch IOerror,
             # which will result in one more call to cancel().
             self.cancel()
-    
-    
+
+
+    #@+node:ekr.20170318090045.7: *3* _resend_if_necessary
     def _resend_if_necessary(self):
         """ _resend_if_necessary()
         
@@ -106,8 +111,9 @@ class Future(object):
         elif timetime > self._next_send_time:
             self._send('req?')
             self._next_send_time = timetime + 0.5
-    
-    
+
+
+    #@+node:ekr.20170318090045.8: *3* set_auto_cancel_timeout
     def set_auto_cancel_timeout(self, timeout):
         """ set_auto_cancel_timeout(timeout):
         
@@ -123,8 +129,9 @@ class Future(object):
             self._auto_cancel_timeout = float(timeout)
         else:
             raise ValueError('A timeout cannot be negative')
-    
-    
+
+
+    #@+node:ekr.20170318090045.9: *3* cancel
     def cancel(self):
         """ cancel()
         
@@ -147,8 +154,9 @@ class Future(object):
         else:
             # Already done or canceled
             return True
-    
-    
+
+
+    #@+node:ekr.20170318090045.10: *3* cancelled
     def cancelled(self):
         """ cancelled()
         
@@ -156,8 +164,9 @@ class Future(object):
         
         """
         return self._status == 2
-    
-    
+
+
+    #@+node:ekr.20170318090045.11: *3* running
     def running(self):
         """ running()
         
@@ -166,8 +175,9 @@ class Future(object):
         
         """
         return self._status == 1
-    
-    
+
+
+    #@+node:ekr.20170318090045.12: *3* done
     def done(self):
         """ done()
         
@@ -175,8 +185,9 @@ class Future(object):
         
         """
         return self._status in [2,3,4]
-    
-    
+
+
+    #@+node:ekr.20170318090045.13: *3* _wait
     def _wait(self, timeout):
         """ _wait(timeout)
         
@@ -196,8 +207,9 @@ class Future(object):
         while (self._status < 2) and (time.time() < timestamp):
             self._req_channel._process_events_local()
             time.sleep(0.01) # 10 ms
-    
-    
+
+
+    #@+node:ekr.20170318090045.14: *3* result
     def result(self, timeout=None):
         """ result(timeout=None)
         
@@ -226,8 +238,9 @@ class Future(object):
             raise self._result
         else:
             return self._result
-    
-    
+
+
+    #@+node:ekr.20170318090045.15: *3* result_or_cancel
     def result_or_cancel(self, timeout=1.0):
         """ result_or_cancel(timeout=1.0)
         
@@ -247,8 +260,9 @@ class Future(object):
         else:
             self.cancel()
             return None
-    
-    
+
+
+    #@+node:ekr.20170318090045.16: *3* exception
     def exception(self, timeout=None):
         """ exception(timeout)
         
@@ -277,8 +291,9 @@ class Future(object):
             return self._result
         else:
             return None # no exception
-    
-    
+
+
+    #@+node:ekr.20170318090045.17: *3* add_done_callback
     def add_done_callback(self, fn):
         """ add_done_callback(fn)
         
@@ -305,8 +320,9 @@ class Future(object):
             yoton.call_later(fn, 0, self)
         else:
             self._callbacks.append(fn)
-    
-    
+
+
+    #@+node:ekr.20170318090045.18: *3* set_running_or_notify_cancel
     def set_running_or_notify_cancel(self):
         """ set_running_or_notify_cancel()
         
@@ -332,8 +348,9 @@ class Future(object):
             return True
         else:
             raise RuntimeError('set_running_or_notify_cancel should be called when in a clear state.')
-    
-    
+
+
+    #@+node:ekr.20170318090045.19: *3* set_result
     def set_result(self, result):
         """ set_result(result)
         
@@ -349,8 +366,9 @@ class Future(object):
             self._status = 4
             for fn in self._callbacks:
                 yoton.call_later(fn, 0, self)
-    
-    
+
+
+    #@+node:ekr.20170318090045.20: *3* set_exception
     def set_exception(self, exception):
         """ set_exception(exception)
         
@@ -374,6 +392,8 @@ class Future(object):
                 yoton.call_later(fn, 0, self)
 
 
+    #@-others
+#@+node:ekr.20170318090045.21: ** class ReqChannel
 class ReqChannel(BaseChannel):
     """ ReqChannel(context, slot_base)
     
@@ -460,6 +480,8 @@ class ReqChannel(BaseChannel):
     # acknowledged it (and which one).
     
     
+    #@+others
+    #@+node:ekr.20170318090045.22: *3* __init__
     def __init__(self, context, slot_base):
         BaseChannel.__init__(self, context, slot_base, OBJECT)
         
@@ -482,12 +504,14 @@ class ReqChannel(BaseChannel):
         self._timer = yoton.events.Timer(0.5, False)
         self._timer.bind(self._process_events_local)
         self._timer.start()
-    
-    
+
+
+    #@+node:ekr.20170318090045.23: *3* _messaging_patterns
     def _messaging_patterns(self):
         return 'req-rep', 'rep-req'
-    
-   
+
+       
+    #@+node:ekr.20170318090045.24: *3* __getattr__
     def __getattr__(self, name):
         if name.startswith('_'):
             return object.__getattribute__(self, name)
@@ -497,8 +521,9 @@ class ReqChannel(BaseChannel):
             def proxy_function(*args, **kwargs):
                 return self._handle_request(name, *args, **kwargs)
             return proxy_function
-    
-    
+
+
+    #@+node:ekr.20170318090045.25: *3* _handle_request
     def _handle_request(self, name, *args, **kwargs):
         """ _handle_request(request, callback, **kwargs)
         
@@ -528,8 +553,9 @@ class ReqChannel(BaseChannel):
         
         # Return the Future instance
         return item
-    
-    
+
+
+    #@+node:ekr.20170318090045.26: *3* _resend_requests
     def _resend_requests(self):
         """ _resend_requests()
         
@@ -548,8 +574,9 @@ class ReqChannel(BaseChannel):
                 self._request_items.pop(request_id)
             else:
                 item._resend_if_necessary()
-    
-    
+
+
+    #@+node:ekr.20170318090045.27: *3* _recv_item
     def _recv_item(self):
         """ _recv_item()
         
@@ -609,8 +636,9 @@ class ReqChannel(BaseChannel):
             if item:
                 item._rep = package._data
                 return item
-    
-    
+
+
+    #@+node:ekr.20170318090045.28: *3* _process_events_local
     def _process_events_local(self, dummy=None):
         """ _process_events_local()
         
@@ -635,6 +663,8 @@ class ReqChannel(BaseChannel):
 
 
 
+    #@-others
+#@+node:ekr.20170318090045.29: ** class RepChannel
 class RepChannel(BaseChannel):
     """ RepChannel(context, slot_base)
     
@@ -664,6 +694,8 @@ class RepChannel(BaseChannel):
     
     """
     
+    #@+others
+    #@+node:ekr.20170318090045.30: *3* __init__
     def __init__(self, context, slot_base):
         BaseChannel.__init__(self, context, slot_base, OBJECT)
         
@@ -683,14 +715,16 @@ class RepChannel(BaseChannel):
         
         # By default, the replier is off
         self._run_mode = 0
-    
-    
+
+
+    #@+node:ekr.20170318090045.31: *3* _messaging_patterns
     def _messaging_patterns(self):
         return 'rep-req', 'req-rep'
-    
-    
+
+
     # Node that setters for normal and event_driven mode are specified in
     # channels_base.py
+    #@+node:ekr.20170318090045.32: *3* set_mode
     def set_mode(self, mode):
         """ set_mode(mode)
         
@@ -718,8 +752,9 @@ class RepChannel(BaseChannel):
                 self._thread.start()
         else:
             raise ValueError('Invalid mode for ReqChannel instance.')
-    
-    
+
+
+    #@+node:ekr.20170318090045.33: *3* _handle_request
     def _handle_request(self, message):
         """ _handle_request(message)
         
@@ -739,8 +774,9 @@ class RepChannel(BaseChannel):
         
         # Call
         return func(*args, **kwargs)
-    
-    
+
+
+    #@+node:ekr.20170318090045.34: *3* _acknowledge_next_pre_request
     def _acknowledge_next_pre_request(self):
         
         # Cancel current pre-request ourselves if it takes too long.
@@ -764,8 +800,9 @@ class RepChannel(BaseChannel):
                 pass # Channel closed, nothing we can do about that
             # 
             #print 'ack', self._context.id,  package._dest_seq-REQREP_SEQ_REF
-    
-    
+
+
+    #@+node:ekr.20170318090045.35: *3* _replier_iteration
     def _replier_iteration(self, package):
         """ _replier_iteration()
         
@@ -831,8 +868,9 @@ class RepChannel(BaseChannel):
                     # Probably wrong type of reply returned by handle_request()
                     print('Warning: request could not be send:')
                     print(getErrorMsg())
-    
-    
+
+
+    #@+node:ekr.20170318090045.36: *3* _process_events_local
     def _process_events_local(self, dummy=None):
         """ _process_events_local()
         
@@ -855,8 +893,9 @@ class RepChannel(BaseChannel):
                 # We always enter this the last time
                 self._acknowledge_next_pre_request()
                 return
-    
-    
+
+
+    #@+node:ekr.20170318090045.37: *3* echo
     def echo(self, arg1, sleep=0.0):
         """ echo(arg1, sleep=0.0)
         
@@ -869,6 +908,8 @@ class RepChannel(BaseChannel):
 
 
 
+    #@-others
+#@+node:ekr.20170318090045.38: ** class ThreadForReqChannel
 class ThreadForReqChannel(threading.Thread):
     """ ThreadForReqChannel(channel)
     
@@ -876,6 +917,8 @@ class ThreadForReqChannel(threading.Thread):
     
     """
     
+    #@+others
+    #@+node:ekr.20170318090045.39: *3* __init__
     def __init__(self, channel):
         threading.Thread.__init__(self)
         
@@ -888,8 +931,9 @@ class ThreadForReqChannel(threading.Thread):
         
         # Make deamon
         self.setDaemon(True)
-    
-    
+
+
+    #@+node:ekr.20170318090045.40: *3* run
     def run(self):
         """ run()
         
@@ -914,3 +958,8 @@ class ThreadForReqChannel(threading.Thread):
                 channel._acknowledge_next_pre_request()
             else:
                 channel._acknowledge_next_pre_request()
+    #@-others
+#@-others
+#@@language python
+#@@tabwidth -4
+#@-leo

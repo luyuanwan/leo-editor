@@ -1,29 +1,31 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2013 Almar Klein
-#
-# Yoton is distributed under the terms of the (new) BSD License.
-# The full license can be found in 'license.txt'.
+#@+leo-ver=5-thin
+#@+node:ekr.20170318085624.1: * @file channels_pubsub.py
+#@@first
 
 """ Module yoton.channels.channels_pubsub
 
 Defines the channel classes for the pub/sub pattern.
 
 """
-
+#@+<< channels_pubsub imports >>
+#@+node:ekr.20170318085638.1: ** << channels_pubsub imports >>
 import time
-import sys
-
-import yoton
-from yoton.misc import basestring, bytes, str, xrange
-from yoton.misc import Property, getErrorMsg
+# import sys
+# import yoton
+# from yoton.misc import bytes, # basestring, str, xrange 
+# from yoton.misc import Property, getErrorMsg
 from yoton.channels import BaseChannel
-from yoton.core import Package
+# from yoton.core import Package
 
 QUEUE_NULL = 0
 QUEUE_OK = 1
 QUEUE_FULL = 2
 
 
+#@-<< channels_pubsub imports >>
+#@+others
+#@+node:ekr.20170318085638.2: ** class PubChannel(BaseChannel)
 class PubChannel(BaseChannel):
     """ PubChannel(context, slot_base, message_type=yoton.TEXT)
     
@@ -50,15 +52,19 @@ class PubChannel(BaseChannel):
     
     """
     
+    #@+others
+    #@+node:ekr.20170318085638.3: *3* __init__
     def __init__(self, *args, **kwargs):
         BaseChannel.__init__(self, *args, **kwargs)
         self._source_set = set()
-    
-    
+
+
+    #@+node:ekr.20170318085638.4: *3* _messaging_patterns
     def _messaging_patterns(self):
         return 'pub-sub', 'sub-pub'
-    
-    
+
+
+    #@+node:ekr.20170318085638.5: *3* send
     def send(self, message):
         """ send(message)
         
@@ -70,8 +76,9 @@ class PubChannel(BaseChannel):
         
         """
         self._send( self.message_to_bytes(message) )
-    
-    
+
+
+    #@+node:ekr.20170318085638.6: *3* _recv_package
     def _recv_package(self, package):
         """ Overloaded to set blocking mode.
         Do not call _maybe_emit_received(), a PubChannel never emits
@@ -98,6 +105,8 @@ class PubChannel(BaseChannel):
 
 
 
+    #@-others
+#@+node:ekr.20170318085638.7: ** class SubChannel(BaseChannel)
 class SubChannel(BaseChannel):
     """ SubChannel(context, slot_base, message_type=yoton.TEXT)
     
@@ -130,6 +139,8 @@ class SubChannel(BaseChannel):
     
     """
     
+    #@+others
+    #@+node:ekr.20170318085638.8: *3* __init__
     def __init__(self, *args, **kwargs):
         BaseChannel.__init__(self, *args, **kwargs)
         
@@ -142,24 +153,28 @@ class SubChannel(BaseChannel):
         # Automatically check queue status when new data
         # enters the system
         self.received.bind(self._check_queue_status)
-    
-    
+
+
+    #@+node:ekr.20170318085638.9: *3* _messaging_patterns
     def _messaging_patterns(self):
         return 'sub-pub', 'pub-sub'
-    
-    
+
+
+    #@+node:ekr.20170318085638.10: *3* __iter__
     def __iter__(self):
         return self
-    
-    
+
+
+    #@+node:ekr.20170318085638.11: *3* __next__
     def __next__(self): # Python 3.x
         m = self.recv(False)
         if m:
             return m
         else:
             raise StopIteration()
-    
-    
+
+
+    #@+node:ekr.20170318085638.12: *3* next
     def next(self): # Python 2.x
         """ next()
         
@@ -167,10 +182,11 @@ class SubChannel(BaseChannel):
         
         """
         return self.__next__()
-    
-    
+
+
     ## For sync mode
-    
+
+    #@+node:ekr.20170318085638.13: *3* set_sync_mode
     def set_sync_mode(self, value):
         """ set_sync_mode(value)
         
@@ -197,8 +213,9 @@ class SubChannel(BaseChannel):
             self._queue_status = QUEUE_OK
         else:
             self._queue_status = QUEUE_NULL
-    
-    
+
+
+    #@+node:ekr.20170318085638.14: *3* _send_block_message_to_senders
     def _send_block_message_to_senders(self, what):
         """ _send_block_message_to_senders(what)
         
@@ -216,8 +233,9 @@ class SubChannel(BaseChannel):
         except IOError:
             # If self._closed
             self._check_queue_status = QUEUE_NULL
-    
-    
+
+
+    #@+node:ekr.20170318085638.15: *3* _check_queue_status
     def _check_queue_status(self, dummy=None):
         """ _check_queue_status()
         
@@ -250,11 +268,12 @@ class SubChannel(BaseChannel):
                 self._send_block_message_to_senders('ok')
             else:
                 self._send_block_message_to_senders('full')
-    
-    
+
+
     ## Receive methods
-    
-    
+
+
+    #@+node:ekr.20170318085638.16: *3* recv
     def recv(self, block=True):
         """ recv(block=True)
         
@@ -278,9 +297,10 @@ class SubChannel(BaseChannel):
         if package is not None:
             return self.message_from_bytes(package._data)
         else:
-            return self.message_from_bytes(bytes())
-    
-    
+            return self.message_from_bytes(b'') ### bytes())
+
+
+    #@+node:ekr.20170318085638.17: *3* recv_all
     def recv_all(self):
         """ recv_all()
         
@@ -293,10 +313,11 @@ class SubChannel(BaseChannel):
         
         # Pop all messages and return as a list
         pop = self._q_in.pop
-        packages = [pop() for i in xrange(len(self._q_in))]
+        packages = [pop() for i in range(len(self._q_in))]
         return [self.message_from_bytes(p._data) for p in packages]
-    
-    
+
+
+    #@+node:ekr.20170318085638.18: *3* recv_selected
     def recv_selected(self):
         """ recv_selected()
         
@@ -322,7 +343,7 @@ class SubChannel(BaseChannel):
         
         # Pop all messages that have sequence number lower than reference
         try:
-            for i in xrange(len(q)):
+            for i in range(len(q)):
                 part = q.pop()
                 if part._recv_seq > ref_seq:
                     q.insert(part) # put back in queue
@@ -334,8 +355,9 @@ class SubChannel(BaseChannel):
         
         # Done; return messages
         return [self.message_from_bytes(p._data) for p in popped]
-    
-    
+
+
+    #@+node:ekr.20170318085638.19: *3* _get_pending_sequence_numbers
     def _get_pending_sequence_numbers(self):
         """ _get_pending_sequence_numbers()
         
@@ -359,6 +381,8 @@ class SubChannel(BaseChannel):
 
 
 
+    #@-others
+#@+node:ekr.20170318085638.20: ** select_sub_channel
 def select_sub_channel(*args):
     """ select_sub_channel(channel1, channel2, ...)
     
@@ -407,3 +431,7 @@ def select_sub_channel(*args):
         return first_channel
     else:
         return None
+#@-others
+#@@language python
+#@@tabwidth -4
+#@-leo

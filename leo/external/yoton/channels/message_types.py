@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2013 Almar Klein
-#
-# Yoton is distributed under the terms of the (new) BSD License.
-# The full license can be found in 'license.txt'.
+#@+leo-ver=5-thin
+#@+node:ekr.20170318090814.1: * @file message_types.py
+#@@first
 
 """ Module yoton.channels.message_types
 
@@ -14,7 +13,8 @@ The Packer and Unpacker classes for the ObjectMessageType are based on
 the xdrrpc Python module by Rob Reilink and Windel Bouwman.
 
 """
-
+#@+<< message_types imports >>
+#@+node:ekr.20170318090828.1: ** << message_types imports >>
 import sys
 import struct
 from yoton.misc import bytes, basestring, long
@@ -26,8 +26,9 @@ elif sys.stdin and sys.stdin.encoding:
     STDINENC = sys.stdin.encoding
 else:
     STDINENC = 'utf-8'
-
-
+#@-<< message_types imports >>
+#@+others
+#@+node:ekr.20170318090828.2: ** class MessageType
 class MessageType(object):
     """ MessageType()
     
@@ -46,17 +47,23 @@ class MessageType(object):
     
     """
     
+    #@+others
+    #@+node:ekr.20170318090828.3: *3* message_to_bytes
     def message_to_bytes(self, message):
         raise NotImplementedError()
-    
+
+    #@+node:ekr.20170318090828.4: *3* message_from_bytes
     def message_from_bytes(self, bb): 
         raise NotImplementedError()
-    
+
+    #@+node:ekr.20170318090828.5: *3* message_type_name
     def message_type_name(self):
        raise NotImplementedError()
 
 
 
+    #@-others
+#@+node:ekr.20170318090828.6: ** class BinaryMessageType
 class BinaryMessageType(MessageType):
     """ BinaryMessageType()
     
@@ -65,21 +72,27 @@ class BinaryMessageType(MessageType):
     
     """
     
+    #@+others
+    #@+node:ekr.20170318090828.7: *3* message_type_name
     def message_type_name(self):
        return 'bin'
-    
-    
+
+
+    #@+node:ekr.20170318090828.8: *3* message_to_bytes
     def message_to_bytes(self, message):
         if not isinstance(message, bytes):
             raise ValueError("Binary channel requires byte messages.")
         return message
-    
-    
+
+
+    #@+node:ekr.20170318090828.9: *3* message_from_bytes
     def message_from_bytes(self, bb): 
         return bb
 
 
 
+    #@-others
+#@+node:ekr.20170318090828.10: ** class TextMessageType
 class TextMessageType(MessageType):
     """ BinaryMessageType()
     
@@ -88,9 +101,12 @@ class TextMessageType(MessageType):
     
     """
     
+    #@+others
+    #@+node:ekr.20170318090828.11: *3* message_type_name
     def message_type_name(self):
        return 'txt'
-    
+
+    #@+node:ekr.20170318090828.12: *3* message_to_bytes
     def message_to_bytes(self, message):
         
         # Check
@@ -119,13 +135,16 @@ class TextMessageType(MessageType):
         
         # Encode and send
         return message.encode('utf-8')
-    
-    
+
+
+    #@+node:ekr.20170318090828.13: *3* message_from_bytes
     def message_from_bytes(self, bb): 
         return bb.decode('utf-8')
 
 
 
+    #@-others
+#@+node:ekr.20170318090828.14: ** class ObjectMessageType
 class ObjectMessageType(MessageType):
     """ ObjectMessageType()
     
@@ -135,14 +154,18 @@ class ObjectMessageType(MessageType):
     
     """
     
+    #@+others
+    #@+node:ekr.20170318090828.15: *3* message_type_name
     def message_type_name(self):
        return 'obj'
-    
+
+    #@+node:ekr.20170318090828.16: *3* message_to_bytes
     def message_to_bytes(self, message):
         packer = Packer()
         packer.pack_object(message)
         return packer.get_buffer()
-    
+
+    #@+node:ekr.20170318090828.17: *3* message_from_bytes
     def message_from_bytes(self, bb): 
         if bb:
             unpacker = Unpacker(bb)
@@ -152,6 +175,7 @@ class ObjectMessageType(MessageType):
 
 
 
+    #@-others
 # Formats
 _FMT_TYPE = '<B'
 _FMT_BOOL = '<B'
@@ -169,27 +193,34 @@ _TYPE_TUPLE = ord('t')
 _TYPE_DICT = ord('d')
 
 
+#@+node:ekr.20170318090828.18: ** class Packer
 class Packer:
     
     # Note that while xdrlib uses StringIO/BytesIO, this approach using 
     # a list is actually faster.
     
+    #@+others
+    #@+node:ekr.20170318090828.19: *3* __init__
     def __init__(self):
         self._buf = []
-    
+
+    #@+node:ekr.20170318090828.20: *3* get_buffer
     def get_buffer(self):
         return bytes().join(self._buf)
-    
+
+    #@+node:ekr.20170318090828.21: *3* write
     def write(self, bb):
         self._buf.append(bb)
-    
+
+    #@+node:ekr.20170318090828.22: *3* write_number
     def write_number(self, n):
         if n < 255:
             self.write( struct.pack('<B', n) )
         else:
             self.write( struct.pack('<B', 255) )
             self.write( struct.pack('<Q', n) )
-    
+
+    #@+node:ekr.20170318090828.23: *3* pack_object
     def pack_object(self, object):
         
         if object is None:
@@ -229,12 +260,17 @@ class Packer:
             raise ValueError("Unsupported type: %s" % repr(type(object)))
 
 
+    #@-others
+#@+node:ekr.20170318090828.24: ** class Unpacker
 class Unpacker:
     
+    #@+others
+    #@+node:ekr.20170318090828.25: *3* __init__
     def __init__(self, data):
         self._buf = data
         self._pos = 0
-    
+
+    #@+node:ekr.20170318090828.26: *3* read
     def read(self, n):
         i1 = self._pos
         i2 = self._pos + n
@@ -243,13 +279,15 @@ class Unpacker:
         else:
             self._pos = i2
             return self._buf[i1:i2]
-    
+
+    #@+node:ekr.20170318090828.27: *3* read_number
     def read_number(self):
         n, = struct.unpack('<B', self.read(1))
         if n == 255:
             n, = struct.unpack('<Q', self.read(8))
         return n
-    
+
+    #@+node:ekr.20170318090828.28: *3* unpack
     def unpack(self, fmt, n):
         i1 = self._pos
         i2 = self._pos + n
@@ -259,7 +297,8 @@ class Unpacker:
             self._pos = i2
             data = self._buf[i1:i2]
             return struct.unpack(fmt, data)[0]
-    
+
+    #@+node:ekr.20170318090828.29: *3* unpack_object
     def unpack_object(self):
         
         object_type = self.unpack(_FMT_TYPE, 1)
@@ -295,6 +334,7 @@ class Unpacker:
             raise ValueError("Unsupported type: %s" % repr(object_type))
 
 
+    #@-others
 # Define constants
 TEXT = TextMessageType()
 BINARY = BinaryMessageType()
@@ -316,3 +356,7 @@ if __name__ == '__main__':
     print(s2)
     
     
+#@-others
+#@@language python
+#@@tabwidth -4
+#@-leo
