@@ -10,6 +10,8 @@ Defines the base channel class and the MessageType class.
 """
 #@+<< channels_base imports >>
 #@+node:ekr.20170318085137.1: ** << channels_base imports >>
+import leo.core.leoGlobals as g
+
 import time
 import threading
 
@@ -183,6 +185,7 @@ class BaseChannel(object):
         """
         # We keep a reference to the context, otherwise we need locks
         # The context clears the reference to this channel when unregistering.
+        g.trace('===== closing', repr(self))
         self._closed = True
         self._context._unregister_channel(self)
 
